@@ -11,7 +11,7 @@ const Navbar = () => {
             </div>
             <ul className="menu menu-horizontal gap-2">
                 <li className='text-lg font-semibold'><Link href="/">Home</Link></li>
-                <li className='text-lg font-semibold'><Link href="/">Chat</Link></li>
+                <li className='text-lg font-semibold'><Link href="/chat">Chat</Link></li>
             </ul>
             <div className='flex justify-end items-center gap-2'>
                 <label className="swap swap-rotate">
