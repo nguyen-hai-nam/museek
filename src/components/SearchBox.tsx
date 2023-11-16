@@ -2,7 +2,7 @@
 
 const SearchBox = () => {
     return (
-        <input type="text" placeholder="Seeking ..." className="input input-bordered w-full lg:w-3/5" />
+        <input type="text" placeholder="Aa" className="my-8 input input-bordered w-full lg:w-3/5" />
     )
 }
 

@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 const headerItems = [
     {
-        name: 'Home',
+        name: 'Seek',
         href: '/'
     },
     {

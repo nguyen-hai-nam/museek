@@ -5,10 +5,10 @@ import Image from 'next/image'
 
 const SearchResultCard = (props: { name: string; bio: string; roles: string[];}) => {
     return (
-        <Link href="/">
-            <div className="inline-block card w-80 border-2 hover:shadow-md">
+        <Link href="profile/1">
+            <div className="inline-block card w-full border-2 hover:shadow-md">
                 <figure className="avatar">
-                    <div className="h-80 w-80">
+                    <div className="w-full">
                         <Image src="/vercel.svg" width={320} height={320} alt='Profile Picture' />
                     </div>
                 </figure>
