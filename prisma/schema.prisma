@@ -1,0 +1,69 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+    relationMode = "prisma"
+}
+
+model User {
+    id String @id @default(uuid())
+    password String
+    name String
+    gender String?
+    birthDate DateTime?
+    phoneNumber String? @unique
+    email String @unique
+    location String?
+    bio String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    roles UserRole[]
+    user1Collaborations Collaboration[] @relation("UserToCollaboration1")
+    user2Collaborations Collaboration[] @relation("UserToCollaboration2")
+    chats Chat[]
+}
+
+model UserRole {
+    id String @id @default(uuid())
+    userId String
+    user User @relation(fields: [userId], references: [id])
+    roleId String
+    role Role @relation(fields: [roleId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Role {
+    id String @id @default(uuid())
+    name String @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    userRoles UserRole[]
+}
+
+model Collaboration {
+    id String @id @default(uuid())
+    userId1 String
+    user1 User @relation("UserToCollaboration1", fields: [userId1], references: [id])
+    userId2 String
+    user2 User @relation("UserToCollaboration2", fields: [userId2], references: [id])
+    status String
+    invitationMessage String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    chats Chat[]
+}
+
+model Chat {
+    id String @id @default(uuid())
+    collaborationId String
+    collaboration Collaboration @relation(fields: [collaborationId], references: [id])
+    userId String
+    user User @relation(fields: [userId], references: [id])
+    message String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
