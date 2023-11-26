@@ -8,6 +8,12 @@ datasource db {
     relationMode = "prisma"
 }
 
+enum CollaborationStatus {
+    PENDING
+    ACCEPTE
+    REJECTED
+}
+
 model User {
     id String @id @default(uuid())
     password String
@@ -23,7 +29,8 @@ model User {
     roles UserRole[]
     user1Collaborations Collaboration[] @relation("UserToCollaboration1")
     user2Collaborations Collaboration[] @relation("UserToCollaboration2")
-    chats Chat[]
+    sender Chat[] @relation("Sender")
+    receiver Chat[] @relation("Receiver")
 }
 
 model UserRole {
@@ -50,7 +57,7 @@ model Collaboration {
     user1 User @relation("UserToCollaboration1", fields: [userId1], references: [id])
     userId2 String
     user2 User @relation("UserToCollaboration2", fields: [userId2], references: [id])
-    status String
+    status String @default("PENDING")
     invitationMessage String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -61,8 +68,10 @@ model Chat {
     id String @id @default(uuid())
     collaborationId String
     collaboration Collaboration @relation(fields: [collaborationId], references: [id])
-    userId String
-    user User @relation(fields: [userId], references: [id])
+    senderId String
+    sender User @relation("Sender", fields: [senderId], references: [id])
+    receiverId String
+    receiver User @relation("Receiver", fields: [receiverId], references: [id])
     message String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
