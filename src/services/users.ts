@@ -9,6 +9,13 @@ export const getUser = async (id: string) => {
     const user = await prisma.user.findUnique({
         where: {
             id
+        },
+        include: {
+            roles: {
+                include: {
+                    role: true
+                }
+            }
         }
     })
     return user
