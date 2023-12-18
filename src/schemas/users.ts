@@ -5,19 +5,19 @@ export type User = {
     email: string
     phoneNumber?: string
     gender?: string
-    birthDate?: Date
+    birthDate?: string
     location?: string
     bio?: string
     roles?: any[]
 }
 
 export const createUserSchema = z.object({
+    id: z.string(),
     name: z.string(),
     email: z.string().email(),
     phoneNumber: z.string().optional(),
-    password: z.string().min(8),
     gender: z.string().optional(),
-    birthDate: z.date().optional(),
+    birthDate: z.string().optional(),
     location: z.string().optional(),
     bio: z.string().optional()
 })

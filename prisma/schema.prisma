@@ -15,8 +15,7 @@ enum CollaborationStatus {
 }
 
 model User {
-    id String @id @default(uuid())
-    password String
+    id String @id
     name String
     gender String?
     birthDate DateTime?
@@ -36,9 +35,9 @@ model User {
 model UserRole {
     id String @id @default(uuid())
     userId String
-    user User @relation(fields: [userId], references: [id])
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
     roleId String
-    role Role @relation(fields: [roleId], references: [id])
+    role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
@@ -54,9 +53,9 @@ model Role {
 model Collaboration {
     id String @id @default(uuid())
     userId1 String
-    user1 User @relation("UserToCollaboration1", fields: [userId1], references: [id])
+    user1 User @relation("UserToCollaboration1", fields: [userId1], references: [id], onDelete: Cascade)
     userId2 String
-    user2 User @relation("UserToCollaboration2", fields: [userId2], references: [id])
+    user2 User @relation("UserToCollaboration2", fields: [userId2], references: [id], onDelete: Cascade)
     status String @default("PENDING")
     invitationMessage String?
     createdAt DateTime @default(now())
@@ -67,11 +66,11 @@ model Collaboration {
 model Chat {
     id String @id @default(uuid())
     collaborationId String
-    collaboration Collaboration @relation(fields: [collaborationId], references: [id])
+    collaboration Collaboration @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
     senderId String
-    sender User @relation("Sender", fields: [senderId], references: [id])
+    sender User @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
     receiverId String
-    receiver User @relation("Receiver", fields: [receiverId], references: [id])
+    receiver User @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
     message String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

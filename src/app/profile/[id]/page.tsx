@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import axios from "axios"
@@ -8,6 +9,7 @@ import axios from "axios"
 import { User } from "@/schemas/users"
 
 export default function Profile({ params }: { params: { id: string } }) {
+    const router = useRouter()
     const [profile, setProfile] = useState<User | null>(null)
 
     useEffect(() => {
@@ -16,10 +18,13 @@ export default function Profile({ params }: { params: { id: string } }) {
                 setProfile(null)
             }
             const res = await axios.get(`/api/users/${id}`)
+            if (!res.data.user) {
+                router.push("/profile/create")
+            }
             setProfile(res.data.user)
         }
         fetchUser(params.id)
-    }, [params.id])
+    }, [params.id, router])
 
     if (!profile) {
         return <div>Loading...</div>
@@ -41,7 +46,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                 <div className="w-3/4 max-w-full">
                     <div className="flex items-center justify-between">
                         <span className="text-xl font-semibold">{profile.name}</span>
-                        <Link href={`${params.id}/edit`}>
+                        <Link href="/profile/edit">
                             <button className="btn btn-sm">Edit profile</button>
                         </Link>
                     </div>
@@ -50,7 +55,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                         <p className="font-semibold">Email: {profile.email}</p>
                         <p className="font-semibold">Location: {profile.location}</p>
                         <p className="font-semibold">Gender: {profile.gender === "male" ? "Male" : "Female"}</p>
-                        <p className="font-semibold">Birthday: {profile.birthDate?.toDateString()}</p>
+                        <p className="font-semibold">Birthday: {(new Date(profile.birthDate as string)).toLocaleDateString("vi-VN")}</p>
                     </div>
                     <div className="mt-4 xl:w-4/5 flex flex-wrap gap-2">
                         {profile.roles?.map((role, index) => (
