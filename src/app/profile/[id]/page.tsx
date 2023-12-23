@@ -54,7 +54,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                         <p className="font-semibold">Phone: {profile.phoneNumber}</p>
                         <p className="font-semibold">Email: {profile.email}</p>
                         <p className="font-semibold">Location: {profile.location}</p>
-                        <p className="font-semibold">Gender: {profile.gender === "male" ? "Male" : "Female"}</p>
+                        <p className="font-semibold">Gender: {profile.gender}</p>
                         <p className="font-semibold">Birthday: {(new Date(profile.birthDate as string)).toLocaleDateString("vi-VN")}</p>
                     </div>
                     <div className="mt-4 xl:w-4/5 flex flex-wrap gap-2">

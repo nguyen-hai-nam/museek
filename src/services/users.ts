@@ -29,11 +29,24 @@ export const createUser = async (data: any) => {
 }
 
 export const updateUser = async (id: string, data: any) => {
+    const { roles, ...rest } = data
     const user = await prisma.user.update({
         where: {
             id
         },
-        data
+        data: {
+            ...rest,
+            roles: {
+                deleteMany: {},
+                create: roles?.map((role: any) => ({
+                    role: {
+                        connect: {
+                            id: role.id
+                        }
+                    }
+                }))
+            }
+        }
     })
     return user
 }
