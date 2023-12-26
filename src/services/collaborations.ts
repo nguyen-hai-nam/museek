@@ -16,6 +16,18 @@ export const getCollaboration = async (id: string) => {
 
 export const createCollaboration = async (data: any) => {
     const { userId1, userId2, ...rest } = data
+    const existingCollaboration = await prisma.collaboration.findFirst({
+        where: {
+            userId1,
+            userId2,
+            status: {
+                in: ['WAITING', 'IN_PROGRESS']
+            }
+        }
+    })
+    if (existingCollaboration) {
+        throw new Error('Collaboration already exists')
+    }
     const collaboration = await prisma.collaboration.create({
         data: {
             user1: { connect: { id: userId1 } },

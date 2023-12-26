@@ -7,10 +7,22 @@ import Link from "next/link"
 import axios from "axios"
 
 import { User } from "@/schemas/users"
+import { useUser } from "@clerk/nextjs"
 
 export default function Profile({ params }: { params: { id: string } }) {
     const router = useRouter()
+    const { user } = useUser()
+    const [toast, setToast] = useState<{
+        show: boolean,
+        message: string,
+        type: 'error' | 'success'
+    }>({
+        show: false,
+        message: '',
+        type: 'success'
+    })
     const [profile, setProfile] = useState<User | null>(null)
+    const [invitationMessage, setInvitationMessage] = useState("")
 
     useEffect(() => {
         const fetchUser = async (id: string) => {
@@ -27,11 +39,53 @@ export default function Profile({ params }: { params: { id: string } }) {
     }, [params.id, router])
 
     if (!profile) {
-        return <div>Loading...</div>
+        return (
+            <main className="mx-auto w-3/5 flex justify-center items-center">
+                <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
+            </main>
+        )
+    }
+
+    const sendCollaboration = async () => {
+        try {
+            await axios.post("/api/collaborations", {
+                userId1: user?.id,
+                userId2: params.id,
+                invitationMessage
+            })
+            setToast({
+                show: true,
+                message: 'Invitation sent',
+                type: 'success'
+            })
+        } catch (error: any) {
+            setToast({
+                show: true,
+                message: error.response.data.message || 'Something went wrong',
+                type: 'error'
+            })
+        } finally {
+            setTimeout(() => {
+                setToast(p => ({ ...p, show: false }))
+            }, 3000)
+        }
     }
 
     return (
         <main className="mx-auto pt-8 w-3/5">
+            <dialog id="collab_modal" className="modal">
+                <div className="modal-box">
+                    <h2 className="p-2 font-semibold">Invitation message</h2>
+                    <p className="p-2 text-sm text-gray-400">A kind message helps in creating a positive and collaborative environment.</p>
+                    <textarea  value={invitationMessage} onChange={(e) => setInvitationMessage(e.target.value)} className="mt-6 textarea textarea-primary w-full" placeholder="Your invitation message goes here ..."></textarea>
+                    <div className="modal-action">
+                        <form method="dialog">
+                            <button className="mx-2 btn">Close</button>
+                            <button className="btn btn-primary" onClick={sendCollaboration}>Send</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
             <div className="flex justify-between gap-12">
                 <div className="min-w-max avatar cursor-pointer rounded-full overflow-hidden">
                     <div className="w-12 md:w-24 lg:w-36 xl:w-48 rounded-full">
@@ -46,9 +100,13 @@ export default function Profile({ params }: { params: { id: string } }) {
                 <div className="w-3/4 max-w-full">
                     <div className="flex items-center justify-between">
                         <span className="text-xl font-semibold">{profile.name}</span>
-                        <Link href="/profile/edit">
-                            <button className="btn btn-sm">Edit profile</button>
-                        </Link>
+                        {user?.id === params.id ? (
+                            <Link href="/profile/edit">
+                                <button className="btn btn-sm">Edit profile</button>
+                            </Link>
+                        ) : (
+                            <button className="btn btn-sm btn-primary" onClick={()=>(document.getElementById('collab_modal') as HTMLDialogElement)?.showModal()}>Collab</button>
+                        )}
                     </div>
                     <div className="mt-4 xl:w-4/5 grid grid-cols-2">
                         <p className="font-semibold">Phone: {profile.phoneNumber}</p>
@@ -69,6 +127,13 @@ export default function Profile({ params }: { params: { id: string } }) {
                 <p className="text-center">{profile.bio}</p>
             </div>
             <div className="mx-auto h-0 w-3/5 divider"></div>
+            {toast.show && (
+                <div className="toast toast-end">
+                    <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                        <span>{toast.message}</span>
+                    </div>
+                </div>
+            )}
         </main>
     )
 }
