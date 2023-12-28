@@ -11,11 +11,11 @@ const headerItems = [
     },
     {
         name: 'Collaboration',
-        href: 'collaboration'
+        href: '/collaboration'
     },
     {
         name: 'Chat',
-        href: 'chat'
+        href: '/chat'
     }
 ]
 
