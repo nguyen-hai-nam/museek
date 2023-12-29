@@ -1,75 +1,84 @@
-import Image from 'next/image'
+"use client"
 
-const data = [
-    {
-        id: 1,
-        name: "Harley Benton",
-        location: "Ha Noi, Vietnam",
-        avatar: "/vercel.svg",
-        roles: ["Guitarist", "Singer", "Songwriter", "Composer", "Arranger"],
-        invitationMessage: "Hi there, I would like to add you as a collaborator to my project.",
-    },
-    {
-        id: 2,
-        name: "Olivia Rodrigo",
-        location: "TPHCM, Vietnam",
-        avatar: "/vercel.svg",
-        roles: ["Sound Engineer", "Producer"],
-        invitationMessage: "Good day, I would like to invite you as a collaborator to my project. We can discuss more details later.",
+import { useUser } from '@clerk/nextjs'
+import axios from 'axios'
+import { useEffect, useState } from 'react'
+
+import CollaborationCard from '@/components/CollaborationCard'
+import { Collaboration, CollaborationStatus, getCollaborationsResponseSchema } from '@/schemas/collaborations'
+
+export default function Collaboration() {
+    const { user } = useUser()
+    const [incomingCollaborations, setIncomingCollaborations] = useState<Collaboration[]>([])
+    const [myCollaborations, setMyCollaborations] = useState<Collaboration[]>([])
+    useEffect(() => {
+        if (!user) {
+            return
+        }
+        const fetchCollaborations = async () => {
+            try {
+                const res = await axios.get(`api/collaborations?where={"userId2":"${user.id}"}&include={"user1":true}`)
+                const validatedCollaborations = getCollaborationsResponseSchema.parse(res.data.collaborations)
+                setIncomingCollaborations(validatedCollaborations.filter((collaboration) => collaboration.status === 'WAITING'))
+                setMyCollaborations(validatedCollaborations.filter((collaboration) => collaboration.status !== 'WAITING'))
+            } catch (error) {
+                setIncomingCollaborations([])
+                setMyCollaborations([])
+            }
+        }
+        fetchCollaborations()
+    }, [user])
+
+    const handleStatusChange = (id: string, status: CollaborationStatus) => {
+        if (status === 'DONE') {
+            setMyCollaborations(myCollaborations.map(collaboration =>
+                collaboration.id === id ? { ...collaboration, status } : collaboration
+            ))
+        } else if (status === 'IN_PROGRESS') {
+            const collaborationInProgress = incomingCollaborations.find(collaboration => collaboration.id === id)
+            if (collaborationInProgress) {
+                setIncomingCollaborations(incomingCollaborations.filter(collaboration => collaboration.id !== id))
+                setMyCollaborations(myCollaborations.concat({ ...collaborationInProgress, status }))
+            }
+        } else if (status === 'REJECTED') {
+            setIncomingCollaborations(incomingCollaborations.filter(collaboration => collaboration.id !== id))
+        }
     }
-]
 
-export default function CurrentCollaboration() {
+    if (!user) {
+        return (
+            <main className="mx-auto w-3/5 flex justify-center items-center">
+                <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
+            </main>
+        )
+    }
+
     return (
-        <main className="mx-auto w-full overflow-x-auto">
-            <table className="table">
-                {/* head */}
-                <thead>
-                    <tr>
-                        <th className='text-center'>Name</th>
-                        <th className='text-center'>Roles</th>
-                        <th className='text-center'>Invitation Message</th>
-                        <th className='text-center'></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {data.map((user) => (
-                        <tr key={user.id}>
-                            <td>
-                                <div className="flex items-center gap-4">
-                                    <div className="hidden lg:block avatar">
-                                        <div className="mask mask-squircle w-12 h-12">
-                                            <Image
-                                                width={48}
-                                                height={48}
-                                                src={user.avatar}
-                                                alt="Profile Picture"
-                                            /> </div>
-                                    </div>
-                                    <div>
-                                        <div className="font-bold">{user.name}</div>
-                                        <div className="text-sm opacity-50">{user.location}</div>
-                                    </div>
-                                </div>  
-                            </td>
-                            <td>
-                                <div className='flex flex-wrap gap-1'>
-                                    {user.roles.map((role, index) => (
-                                        <div key={index} className="badge badge-outline w-max font-semibold border-2">{role}</div>
-                                    ))}
-                                </div>
-                            </td>
-                            <td>{user.invitationMessage}</td>
-                            <td>
-                                <div className='flex items-center gap-1'>
-                                    <button className="btn btn-sm btn-success">Finish</button>
-                                    <button className="btn btn-sm btn-error">Leave</button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </main>
+        <div className='my-4 mx-auto w-3/5'>
+            <div className='my-4'>
+                <h1 className='font-semibold text-center'>Incoming Collaboration</h1>
+                <div className='my-4'>
+                    {incomingCollaborations.length > 0 ? incomingCollaborations.map((collaboration) => {
+                        return (
+                            <CollaborationCard key={collaboration.id} {...collaboration} onStatusChange={handleStatusChange}/>
+                        )
+                    }) : (
+                        <p className='text-sm text-center'>No imcoming collaboration</p>
+                    )}
+                </div>
+            </div>
+            <div className='my-4'>
+                <h1 className='font-semibold text-center'>Current Collaboration</h1>
+                <div className='my-4'>
+                    {myCollaborations.length > 0 ? myCollaborations.map((collaboration) => {
+                        return (
+                            <CollaborationCard key={collaboration.id} {...collaboration} onStatusChange={handleStatusChange}/>
+                        )
+                    }) : (
+                        <p className='text-sm text-center'>You have not made any collaborations</p>
+                    )}
+                </div>
+            </div>
+        </div>
     )
 }

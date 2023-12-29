@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/prisma"
 
-export const getAllCollaborations = async () => {
-    const collaborations = await prisma.collaboration.findMany()
+export const getAllCollaborations = async (where: any, include: {
+    user1?: boolean
+    user2?: boolean
+    chats?: boolean
+} | null = null) => {
+    const collaborations = await prisma.collaboration.findMany({
+        where,
+        include
+    })
     return collaborations
 }
 
