@@ -25,7 +25,8 @@ export const collaborationSchema = z.object({
     createdAt: z.string(),
     updatedAt: z.string(),
     user1: z.any(),
-    user2: z.any()
+    user2: z.any(),
+    chats: z.any()
 }).strict()
 
 export const getCollaborationsResponseSchema = z.array(collaborationSchema)

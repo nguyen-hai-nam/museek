@@ -1,11 +1,17 @@
 import { getAllChats, createChat } from '@/services/chats'
 import { createChatSchema } from '@/schemas/chats'
 import { handleError } from "@/utils/api/errorHandler"
-import { pusherServer } from '@/lib/pusher'
 
-export const GET = async () => {
+export const GET = async (req: Request) => {
+    const url = new URL(req.url)
+    const params = new URLSearchParams(url.search)
+    const includeString = params.get('include')
+    const include = includeString ? JSON.parse(includeString) : null
+    const whereString = params.get('where')
+    const where = whereString ? JSON.parse(whereString) : null
+
     try {
-        const chats = await getAllChats()
+        const chats = await getAllChats(where, include)
         return Response.json({ chats })
     } catch (error) {
         return handleError(error)
@@ -17,7 +23,6 @@ export async function POST(req: Request) {
 
     try {
         const validatedBody = createChatSchema.parse(body)
-        pusherServer.trigger(body.collaborationId, 'incoming-message', body.message)
         await createChat(validatedBody)
         return Response.json({ message: 'success' })
     } catch (error) {

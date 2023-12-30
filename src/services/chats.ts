@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma"
+import { pusherServer } from "@/lib/pusher"
 
-export const getAllChats = async () => {
-    const chats = await prisma.chat.findMany()
+export const getAllChats = async (where: any, include: any) => {
+    const chats = await prisma.chat.findMany({
+        where,
+        include
+    })
     return chats
 }
 
@@ -22,8 +26,13 @@ export const createChat = async (data: any) => {
             sender: { connect: { id: senderId } },
             receiver: { connect: { id: receiverId } },
             ...rest
+        },
+        include: {
+            sender: true,
+            receiver: true
         }
     })
+    pusherServer.trigger(collaborationId, "chat", chat)
     return chat
 }
 
