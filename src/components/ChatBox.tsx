@@ -36,15 +36,21 @@ const ChatBox = (props: { collaboration: Collaboration, userId: string }) => {
         const senderId = props.userId
         const receiverId = props.collaboration.user1.id === props.userId ? props.collaboration.user2.id : props.collaboration.user1.id
         const sendMessage = async () => {
-            await axios.post(`api/chats`, {
-                collaborationId: props.collaboration.id,
-                senderId,
-                receiverId,
-                message
-            })
+            setMessage("")
+            try {
+                const res = await axios.post(`api/chats`, {
+                    collaborationId: props.collaboration.id,
+                    senderId,
+                    receiverId,
+                    message
+                })
+                setChats(chats => [...chats, res.data.chat])
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.log(error)
+            }
         }
         sendMessage()
-        setMessage("")
     }
 
     return (

@@ -23,8 +23,8 @@ export async function POST(req: Request) {
 
     try {
         const validatedBody = createChatSchema.parse(body)
-        await createChat(validatedBody)
-        return Response.json({ message: 'success' })
+        const chat = await createChat(validatedBody)
+        return Response.json({ message: 'success', chat })
     } catch (error) {
         return handleError(error)
     }
