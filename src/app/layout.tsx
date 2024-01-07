@@ -20,10 +20,12 @@ export default function RootLayout({
     return (
         <ClerkProvider>
             <html lang="en" data-theme="cupcake">
-                <body className={`px-2 ${inter.className}`}>
+                <body className={`${inter.className} h-screen max-h-screen min-h-screen flex flex-col`}>
                     <Header />
-                    <div className="my-0 h-0 divider"></div> 
-                    {children}
+                    <div className="my-0 h-0 divider"></div>
+                    <div className='grow overflow-auto'>
+                        {children}
+                    </div>
                 </body>
             </html>
         </ClerkProvider>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
 
 import { pusherClient } from '@/lib/pusher'
@@ -11,7 +11,7 @@ import { Collaboration } from '@/schemas/collaborations'
 const ChatBox = (props: { collaboration: Collaboration, userId: string }) => {
     const [chats, setChats] = useState<Chat[]>([])
     const [message, setMessage] = useState<string>("")
-
+    const chatBubbleContainerRef = useRef<HTMLDivElement | null>(null)
     useEffect(() => {
         setChats([])
         const fetchChats = async () => {
@@ -28,9 +28,21 @@ const ChatBox = (props: { collaboration: Collaboration, userId: string }) => {
     useEffect(() => {
         const channel = pusherClient.subscribe(props.collaboration.id)
         channel.bind("chat", (chat: Chat) => {
-            setChats(chats => [...chats, chat])
+            if (chat.senderId !== props.userId) {
+                setChats(chats => [...chats, chat])
+            }
         })
-    }, [props.collaboration.id])
+        return () => {
+            channel.unbind("chat")
+            pusherClient.unsubscribe(props.collaboration.id)
+        }
+    }, [props.collaboration.id, props.userId])
+
+    useEffect(() => {
+        if (chatBubbleContainerRef.current) {
+            chatBubbleContainerRef.current.scrollTop = chatBubbleContainerRef.current.scrollHeight
+        }
+    }, [chats])
 
     const handleSendMessage = (message: string) => {
         const senderId = props.userId
@@ -54,8 +66,8 @@ const ChatBox = (props: { collaboration: Collaboration, userId: string }) => {
     }
 
     return (
-        <div className="h-full w-full overflow-visible">
-            <div className='h-full px-4 flex flex-col-reverse overflow-y-scroll'>
+        <div className="h-full flex flex-col gap-2">
+            <div ref={chatBubbleContainerRef} className='h-[94%] pb-2 px-4 flex flex-col-reverse overflow-auto'>
                 {chats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(chat => (
                     <ChatBubble
                         key={chat.id}
@@ -64,7 +76,7 @@ const ChatBox = (props: { collaboration: Collaboration, userId: string }) => {
                     />
                 ))}
             </div>
-            <div className='mt-12 mx-4 flex items-center gap-2'>
+            <div className='mx-4 flex items-center gap-2'>
                 <input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}

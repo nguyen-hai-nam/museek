@@ -59,7 +59,7 @@ export default function Seek() {
     }
 
     return (
-        <main className="mx-auto w-3/5">
+        <main className="mx-auto h-full w-3/5">
             <div className="flex flex-col justify-center items-center">
                 <SearchBox handleSearchStringChange={handleSearchStringChange}/>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xl:gap-6">

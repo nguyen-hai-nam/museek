@@ -46,9 +46,9 @@ export default function Chat() {
     }
 
     return (
-        <main className="mx-auto pt-8 w-full h-[calc(100vh-180px)] grid grid-cols-[20%_80%] justify-start items-start">
+        <main className="pl-2 h-full w-full grid grid-cols-[20%_80%] justify-start items-start overflow-hidden">
             <div className='h-full border-r-2'>
-                <h1 className='text-2xl font-bold'>Chat</h1>
+                <h1 className='mt-4 text-2xl font-bold'>Chat</h1>
                 <div className='mt-2 mb-4 mr-2 '>
                     <input
                         value={chatSearchString}
@@ -78,7 +78,7 @@ export default function Chat() {
                     ))}
                 </div>
             </div>
-            <div className='h-full'>
+            <div className='h-full grow overflow-auto'>
                 {currentCollaboration && (
                     <ChatBox collaboration={currentCollaboration} userId={user.id}/>
                 )}

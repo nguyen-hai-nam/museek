@@ -23,7 +23,7 @@ const Navbar = () => {
     const { isSignedIn, user } = useUser()
 
     return (
-        <nav className='py-2 flex justify-between items-center'>
+        <nav className='px-2 flex justify-between items-center'>
             <div className="text-3xl font-bold">
                 <Link href='/'>
                     <h1>Museek</h1>
