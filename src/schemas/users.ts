@@ -2,6 +2,8 @@ import { z } from 'zod'
 import { roleSchema } from './roles'
 
 export type User = {
+    id: string
+    avatarUrl?: string
     name: string
     email: string
     phoneNumber?: string
@@ -27,6 +29,7 @@ export const userSchema = z.object({
 
 export const createUserSchema = z.object({
     id: z.string(),
+    avatarUrl: z.string().optional(),
     name: z.string(),
     email: z.string().email(),
     phoneNumber: z.string().optional(),
@@ -37,6 +40,7 @@ export const createUserSchema = z.object({
 })
 
 export const updateUserSchema = z.object({
+    avatarUrl: z.string().optional(),
     name: z.string().optional(),
     phoneNumber: z.string().optional(),
     password: z.string().min(8).optional(),

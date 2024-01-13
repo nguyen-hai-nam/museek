@@ -17,6 +17,7 @@ enum CollaborationStatus {
 
 model User {
     id String @id
+    avatarUrl String?
     name String
     gender String?
     birthDate DateTime?

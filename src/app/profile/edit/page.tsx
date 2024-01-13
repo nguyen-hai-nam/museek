@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import axios from 'axios'
 
 import { User } from '@/schemas/users'
+import { AvatarUpload } from '@/components/AvatarUpload'
 
 export default function Profile() {
     const router = useRouter()
@@ -55,6 +56,26 @@ export default function Profile() {
         }
     }
 
+    const handleAvatarUpdateSuccess = async (url: string) => {
+        if (profile) {
+            if (profile.avatarUrl) {
+                await axios.delete('/api/uploadthing', { data: { fileUrl: profile.avatarUrl } })
+            }
+            setProfile({ ...profile, avatarUrl: url })
+        }
+    }
+
+    const handleAvatarUploadError = (error: Error) => {
+        setToast({
+            show: true,
+            message: error.message,
+            type: 'error'
+        })
+        setTimeout(() => {
+            setToast(p => ({ ...p, show: false }))
+        }, 3000)
+    }
+
     const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedRole = roleOptions.find(role => role.id === event.target.value)
         if (!selectedRole || !profile) {
@@ -88,6 +109,7 @@ export default function Profile() {
         }
         const processedProfile = preprocessProfile(profile)
         try {
+            await submitAvatar()
             await axios.put(`/api/users/${user.id}`, {...processedProfile})
             setToast({
                 show: true,
@@ -105,6 +127,13 @@ export default function Profile() {
                 setToast(p => ({ ...p, show: false }))
             }, 3000)
         }
+    }
+
+    const submitAvatar = async () => {
+        if (!user || !profile) {
+            return
+        }
+        await axios.put(`/api/users/${user.id}`, { avatarUrl: profile.avatarUrl })
     }
 
     const preprocessProfile = (profile: any) => {
@@ -135,34 +164,47 @@ export default function Profile() {
     }
 
     if (!profile) {
-        return <div>Loading...</div>
+        return (
+            <main className="mx-auto w-3/5 flex justify-center items-center">
+                <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
+            </main>
+        )
     }
 
     return (
         <main className="mx-auto pt-8 w-1/2">
             <form className='w-full' onSubmit={onSubmit}>
                 <h1 className='my-6 text-lg font-semibold'>Personal Information</h1>
-                <section className='grid grid-cols-2 gap-4'>
+                <section className='grid grid-cols-[minmax(max-content,120px)_1fr] gap-4 items-center'>
+                    <h3 className='font-semibold'>Avatar</h3>
+                    <AvatarUpload currentAvatarUrl={profile.avatarUrl} onChange={handleAvatarUpdateSuccess} onError={handleAvatarUploadError}/>
+                    <h3 className='font-semibold'>Name</h3>
                     <input type="text" name='name' value={profile.name || ""} onChange={handleChange} placeholder="Name" className="text-sm input input-bordered input-primary w-full"/>
+                    <h3 className='font-semibold'>Gender</h3>
                     <select name='gender' value={profile.gender || ""} onChange={handleChange} className="select select-primary w-full">
                         <option value="" disabled>Select your gender</option>
                         <option value='male'>Male</option>
                         <option value='female'>Female</option>
                         <option value='other'>Other</option>
                     </select>
+                    <h3 className='font-semibold'>Birthday</h3>
                     <input type="date" name='birthDate' value={profile.birthDate?.split('T')[0] || ""} onChange={handleChange} placeholder="Birthday" className="text-sm input input-bordered input-primary w-full" />
+                    <h3 className='font-semibold'>Location</h3>
                     <select name="location" value={profile.location || ""} onChange={handleChange} className="select select-primary w-full">
                         <option value="" disabled>Select your location</option>
                         <option value='hanoi'>Ha Noi</option>
                         <option value='saigon'>Sai Gon</option>
                     </select>
-                    <textarea name='bio' value={profile.bio || ""} onChange={handleChange} className="col-span-2 textarea textarea-primary w-full" placeholder="Bio"></textarea>
+                    <h3 className='font-semibold'>Bio</h3>
+                    <textarea name='bio' value={profile.bio || ""} onChange={handleChange} className="textarea textarea-primary w-full" placeholder="Bio"></textarea>
+                    <h3 className='font-semibold'>Roles</h3>
                     <select onChange={handleRoleChange} className="select select-primary w-full">
                         <option value="" disabled >Add roles</option>
                         {roleOptions.map((role: any) => (
                             <option key={role.id} value={role.id}>{role.name}</option>
                         ))}
                     </select>
+                    <div></div>
                     <div className='flex justify-start items-center flex-wrap gap-1'>
                         {profile?.roles?.map((role: any) => {
                             const roleOption = roleOptions.find((option: any) => option.id === role.roleId)
@@ -175,16 +217,19 @@ export default function Profile() {
                         })}
                     </div>
                 </section>
+                <div className="my-16 mx-auto h-0 w-full divider"></div>
                 <h1 className='my-6 text-lg font-semibold'>Warning Zone</h1>
-                <section className='grid grid-cols-2 gap-4'>
+                <section className='grid grid-cols-[minmax(max-content,120px)_1fr] gap-4 items-center'>
+                    <h3 className='font-semibold'>Email</h3>
                     <input type="text" name="email" value={profile.email || ""} onChange={handleChange} placeholder="Email" disabled className="text-sm input input-bordered input-warning w-full" />
+                    <h3 className='font-semibold'>Phone</h3>
                     <input type="text" name='phoneNumber' value={profile.phoneNumber || ""} onChange={handleChange} placeholder="Phone number" disabled className="text-sm input input-bordered input-warning w-full" />
                     {user?.passwordEnabled && <input type="text" placeholder="Password" className="text-sm input input-bordered input-warning w-full" />}
                     {user?.passwordEnabled && <input type="text" placeholder="Confirm password" className="text-sm input input-bordered input-warning w-full" />}
                 </section>
                 <div className="my-16 mx-auto h-0 w-full divider"></div>
                 <section className='my-16 flex justify-center'>
-                    <button type="submit" className="px-8 btn btn-primary">Submit</button>
+                    <button type="submit" className="px-8 btn btn-primary" disabled={!profile}>Submit</button>
                 </section>
             </form>
             {toast.show && (
