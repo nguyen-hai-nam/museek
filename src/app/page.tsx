@@ -67,6 +67,7 @@ export default function Seek() {
                         <SearchResultCard 
                             key={data.id}
                             id={data.id}
+                            avatarUrl={data.avatarUrl ? data.avatarUrl : "/vercel.svg"}
                             name={data.name}
                             bio={data.bio || ""}
                             roles={data.roles.map((item: any) => item.role.name)}

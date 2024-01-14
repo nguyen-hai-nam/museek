@@ -3,6 +3,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUser } from "@clerk/nextjs"
+import { useEffect, useState } from 'react'
+
+import { User } from '@/schemas/users'
+import axios from 'axios'
 
 const headerItems = [
     {
@@ -21,6 +25,23 @@ const headerItems = [
 
 const Navbar = () => {
     const { isSignedIn, user } = useUser()
+
+    const [profile, setProfile] = useState<User | null>(null)
+
+    useEffect(() => {
+        if (!user) {
+            return
+        }
+        const fetchUser = async (id: string) => {
+            try {
+                const res = await axios.get(`/api/users/${id}`)
+                setProfile(res.data.user)
+            } catch (error) {
+                setProfile(null)
+            }
+        }
+        fetchUser(user.id)
+    }, [user])
 
     return (
         <nav className='px-2 flex justify-between items-center'>
@@ -45,7 +66,7 @@ const Navbar = () => {
                         <label tabIndex={0}>
                             <div className="avatar cursor-pointer">
                                 <div className="w-10 rounded-full">
-                                    <Image src="/vercel.svg" width={96} height={96} alt='Profile Picture' />
+                                    <Image src={profile?.avatarUrl as string} width={96} height={96} alt='Profile Picture' />
                                 </div>
                             </div>
                         </label>

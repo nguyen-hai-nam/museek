@@ -87,13 +87,14 @@ export default function Profile({ params }: { params: { id: string } }) {
                 </div>
             </dialog>
             <div className="flex justify-between gap-12">
-                <div className="min-w-max avatar cursor-pointer rounded-full overflow-hidden">
+                <div className="min-w-max avatar cursor-pointer rounded-full overflow-hidden outline outline-4 outline-offset-8 outline-primary">
                     <div className="w-12 md:w-24 lg:w-36 xl:w-48 rounded-full">
                         <Image
-                            src="/vercel.svg"
+                            src={profile.avatarUrl as string}
                             width={192}
                             height={192}
                             alt="Profile Picture"
+                            className="object-cover"
                         />
                     </div>
                 </div>
