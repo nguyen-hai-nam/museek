@@ -6,12 +6,11 @@ import Image from "next/image"
 import Link from "next/link"
 import axios from "axios"
 
+import { useStore } from "@/lib/zustand"
 import { User } from "@/schemas/users"
-import { useUser } from "@clerk/nextjs"
 
 export default function Profile({ params }: { params: { id: string } }) {
     const router = useRouter()
-    const { user } = useUser()
     const [toast, setToast] = useState<{
         show: boolean,
         message: string,
@@ -21,24 +20,28 @@ export default function Profile({ params }: { params: { id: string } }) {
         message: '',
         type: 'success'
     })
+    const { user } = useStore()
     const [profile, setProfile] = useState<User | null>(null)
     const [invitationMessage, setInvitationMessage] = useState("")
 
     useEffect(() => {
-        const fetchUser = async (id: string) => {
-            if (!id) {
-                setProfile(null)
-            }
-            const res = await axios.get(`/api/users/${id}`)
-            if (!res.data.user) {
-                router.push("/profile/create")
-            }
-            setProfile(res.data.user)
+        if (user?.id === params.id) {
+            setProfile(user)
+            return
         }
-        fetchUser(params.id)
-    }, [params.id, router])
+        const fetchUserProfile = async () => {
+            try {
+                const res = await axios.get(`/api/users/${params.id}`)
+                setProfile(res.data.user)
+            } catch (error) {
+                router.push('/')
+            }
+        }
+        fetchUserProfile()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [params.id])
 
-    if (!profile) {
+    if (!user || !profile) {
         return (
             <main className="mx-auto w-3/5 flex justify-center items-center">
                 <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
@@ -90,11 +93,11 @@ export default function Profile({ params }: { params: { id: string } }) {
                 <div className="min-w-max avatar cursor-pointer rounded-full overflow-hidden outline outline-4 outline-offset-8 outline-primary">
                     <div className="w-12 md:w-24 lg:w-36 xl:w-48 rounded-full">
                         <Image
-                            src={profile.avatarUrl as string}
+                            src={profile.avatarUrl ? profile.avatarUrl : "/vercel.svg"}
                             width={192}
                             height={192}
                             alt="Profile Picture"
-                            className="object-cover"
+                            className="h-full w-full object-cover"
                         />
                     </div>
                 </div>

@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import axios from 'axios'
 
+import { useStore } from '@/lib/zustand'
 import { User } from '@/schemas/users'
 import { AvatarUpload } from '@/components/AvatarUpload'
 
 export default function Profile() {
     const router = useRouter()
-    const { user } = useUser()
+    const { user: userClerk } = useUser()
+
     const [toast, setToast] = useState<{
         show: boolean,
         message: string,
@@ -21,6 +23,7 @@ export default function Profile() {
         type: 'success'
     })
     const [roleOptions, setRoleOptions] = useState<{id: string; name: string}[]>([])
+    const { user, setUser } = useStore()
     const [profile, setProfile] = useState<User | null>(null)
 
     useEffect(() => {
@@ -32,21 +35,7 @@ export default function Profile() {
     }, [])
 
     useEffect(() => {
-        if (!user) {
-            return
-        }
-        const fetchUser = async (id: string) => {
-            const res = await axios.get(`/api/users/${id}`)
-            if (!res.data.user) {
-                setToast({
-                    show: true,
-                    message: 'Something went wrong',
-                    type: 'error'
-                })
-            }
-            setProfile(res.data.user)
-        }
-        fetchUser(user.id)
+        setProfile(user)
     }, [user])
 
     const handleChange = (e: any) => {
@@ -116,6 +105,7 @@ export default function Profile() {
                 message: 'Profile edited',
                 type: 'success'
             })
+            setUser(profile)
             router.push(`/profile/${user.id}`)
         } catch (err) {
             setToast({
@@ -224,8 +214,8 @@ export default function Profile() {
                     <input type="text" name="email" value={profile.email || ""} onChange={handleChange} placeholder="Email" disabled className="text-sm input input-bordered input-warning w-full" />
                     <h3 className='font-semibold'>Phone</h3>
                     <input type="text" name='phoneNumber' value={profile.phoneNumber || ""} onChange={handleChange} placeholder="Phone number" disabled className="text-sm input input-bordered input-warning w-full" />
-                    {user?.passwordEnabled && <input type="text" placeholder="Password" className="text-sm input input-bordered input-warning w-full" />}
-                    {user?.passwordEnabled && <input type="text" placeholder="Confirm password" className="text-sm input input-bordered input-warning w-full" />}
+                    {userClerk?.passwordEnabled && <input type="text" placeholder="Password" className="text-sm input input-bordered input-warning w-full" />}
+                    {userClerk?.passwordEnabled && <input type="text" placeholder="Confirm password" className="text-sm input input-bordered input-warning w-full" />}
                 </section>
                 <div className="my-16 mx-auto h-0 w-full divider"></div>
                 <section className='my-16 flex justify-center'>

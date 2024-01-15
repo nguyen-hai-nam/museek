@@ -3,10 +3,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUser } from "@clerk/nextjs"
-import { useEffect, useState } from 'react'
-
-import { User } from '@/schemas/users'
+import { useEffect } from 'react'
 import axios from 'axios'
+
+import { useStore } from '@/lib/zustand'
 
 const headerItems = [
     {
@@ -24,24 +24,23 @@ const headerItems = [
 ]
 
 const Navbar = () => {
-    const { isSignedIn, user } = useUser()
-
-    const [profile, setProfile] = useState<User | null>(null)
-
+    const { isSignedIn, user: userClerk } = useUser()
+    const { user, setUser } = useStore()
+    
     useEffect(() => {
-        if (!user) {
+        if (!userClerk) {
             return
         }
         const fetchUser = async (id: string) => {
             try {
                 const res = await axios.get(`/api/users/${id}`)
-                setProfile(res.data.user)
+                setUser(res.data.user)
             } catch (error) {
-                setProfile(null)
+                setUser(null)
             }
         }
-        fetchUser(user.id)
-    }, [user])
+        fetchUser(userClerk.id)
+    }, [setUser, userClerk])
 
     return (
         <nav className='px-2 flex justify-between items-center'>
@@ -66,12 +65,12 @@ const Navbar = () => {
                         <label tabIndex={0}>
                             <div className="avatar cursor-pointer">
                                 <div className="w-10 rounded-full">
-                                    <Image src={profile?.avatarUrl as string} width={96} height={96} alt='Profile Picture' />
+                                    <Image src={user?.avatarUrl as string} width={96} height={96} alt='Profile Picture' />
                                 </div>
                             </div>
                         </label>
                         <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                            <li><Link href={`/profile/${user.id}`}>Profile</Link></li>
+                            <li><Link href={`/profile/${user?.id}`}>Profile</Link></li>
                             <li><Link href="/">Settings</Link></li>
                             <li><Link href="/">Log out</Link></li>
                         </ul>
