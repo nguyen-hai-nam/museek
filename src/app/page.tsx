@@ -5,6 +5,7 @@ import axios from "axios"
 
 import SearchResultCard from "@/components/SearchResultCard"
 import SearchBox from "@/components/SearchBox"
+import RoleFilter from "@/components/RoleFilter"
 
 export default function Seek() {
     const firstUpdate = useRef(true)
@@ -50,7 +51,7 @@ export default function Seek() {
         setCurrentPage(newPage)
     }
 
-    if (searchResult.length === 0) {
+    if (firstUpdate.current && searchResult.length === 0) {
         return (
             <main className="mx-auto w-3/5 flex justify-center items-center">
                 <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
@@ -59,11 +60,16 @@ export default function Seek() {
     }
 
     return (
-        <main className="mx-auto h-full w-3/5">
-            <div className="flex flex-col justify-center items-center">
-                <SearchBox handleSearchStringChange={handleSearchStringChange}/>
+        <main className="mx-auto h-full w-full grid grid-cols-9">
+            <div className="col-span-2 mx-auto mt-8 w-1/2 min-w-max">
+                <RoleFilter handleClick={setSearchString}/>
+            </div>
+            <div className="col-start-3 col-end-9 min-w-fit flex flex-col justify-start items-center">
+                <div className="my-8 w-full">
+                    <SearchBox handleSearchStringChange={handleSearchStringChange}/>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xl:gap-6">
-                    {searchResult.map((data) => (
+                    {searchResult.length > 0 ? searchResult.map((data) => (
                         <SearchResultCard 
                             key={data.id}
                             id={data.id}
@@ -72,7 +78,11 @@ export default function Seek() {
                             bio={data.bio || ""}
                             roles={data.roles.map((item: any) => item.role.name)}
                         />
-                    ))}
+                    )) : (
+                        <div className=" col-span-full">
+                            <h1 className="text-lg font-semibold text-center">No results found</h1>
+                        </div>
+                    )}
                 </div>
                 {totalPages === 1 ? (
                     <button className="my-8 btn btn-disabled">1</button>

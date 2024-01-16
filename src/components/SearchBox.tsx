@@ -13,7 +13,7 @@ const SearchBox: FC<SearchBoxProps> = ({ handleSearchStringChange }) => {
     }
 
     return (
-        <input type="text" placeholder="Aa" className="my-8 input input-bordered w-full lg:w-3/5" onChange={handleChange}/>
+        <input type="text" placeholder="Aa" className="input input-bordered w-full" onChange={handleChange}/>
     )
 }
 
