@@ -6,6 +6,7 @@ import axios from "axios"
 import SearchResultCard from "@/components/SearchResultCard"
 import SearchBox from "@/components/SearchBox"
 import RoleFilter from "@/components/RoleFilter"
+import Status from "@/components/Status"
 
 export default function Seek() {
     const firstUpdate = useRef(true)
@@ -65,10 +66,13 @@ export default function Seek() {
                 <RoleFilter handleClick={setSearchString}/>
             </div>
             <div className="col-start-3 col-end-9 min-w-fit flex flex-col justify-start items-center">
-                <div className="my-8 w-full">
+                <div className="my-4 w-min">
+                    <Status />
+                </div>
+                <div className="w-full">
                     <SearchBox handleSearchStringChange={handleSearchStringChange}/>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xl:gap-6">
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 xl:gap-6">
                     {searchResult.length > 0 ? searchResult.map((data) => (
                         <SearchResultCard 
                             key={data.id}

@@ -1,4 +1,11 @@
+import { Prisma } from '@prisma/client'
+
 import { prisma } from "@/lib/prisma"
+
+export const countUsers = async (query: Prisma.UserCountArgs = {}) => {
+    const count = await prisma.user.count(query)
+    return count
+}
 
 export const getAllUsers = async () => {
     const users = await prisma.user.findMany()

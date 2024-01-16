@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma"
 
+export const countCollaborations = async () => {
+    const count = await prisma.collaboration.count()
+    return count
+}
+
 export const getAllCollaborations = async (where: any, include: {
     user1?: boolean
     user2?: boolean
