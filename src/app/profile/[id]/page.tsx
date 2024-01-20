@@ -6,10 +6,12 @@ import Image from "next/image"
 import Link from "next/link"
 import axios from "axios"
 import { LuUpload } from "react-icons/lu"
+import { IoClose, IoAdd, IoRemove, IoTrash } from "react-icons/io5"
 
 import { useStore } from "@/lib/zustand"
 import { User } from "@/schemas/users"
 import ProfileImageCarousel from "@/components/ProfileImageCarousel"
+import ProfileImagePreview from "@/components/ProfileImagePreview"
 
 export default function Profile({ params }: { params: { id: string } }) {
     const router = useRouter()
@@ -27,6 +29,10 @@ export default function Profile({ params }: { params: { id: string } }) {
     const [invitationMessage, setInvitationMessage] = useState("")
     const [uploadedImage, setUploadedImage] = useState<File | null>(null)
     const [imageDescription, setImageDescription] = useState("")
+    const [imagePreview, setImagePreview] = useState<any | null>(null)
+    const [imagePreviewZoom, setImagePreviewZoom] = useState(0.9)
+    const [isDeleting, setIsDeleting] = useState(false)
+    
 
     useEffect(() => {
         if (user?.id === params.id) {
@@ -129,9 +135,31 @@ export default function Profile({ params }: { params: { id: string } }) {
         }
     }
 
+    const handleImageDelete = async () => {
+        setIsDeleting(true)
+        await axios.delete(`/api/profileImages/${imagePreview.id}`)
+        setProfile((oldProfile) => { 
+            if (!oldProfile) return null
+            return { ...oldProfile, profileImages: oldProfile.profileImages?.filter((image: any) => image.id !== imagePreview.id)}
+        })
+        setIsDeleting(false)
+        setImagePreview(null)
+        setImagePreviewZoom(0.9)
+    }
+
     const handleUploadModalClose = () => {
         setUploadedImage(null)
         setImageDescription("")
+    }
+
+    const handlePreviewModalOpen = (profileImage: string) => {
+        setImagePreview(profileImage)
+        setImagePreviewZoom(0.9)
+    }
+    
+    const handlePreviewModalClose = () => {
+        setImagePreview(null)
+        setImagePreviewZoom(0.9)
     }
 
     return (
@@ -162,6 +190,23 @@ export default function Profile({ params }: { params: { id: string } }) {
                     </div>
                 </div>
             </dialog>
+            {imagePreview && (
+                <div className="z-10 fixed top-0 left-0 w-screen h-screen bg-black/90 overflow-hidden">
+                    <div>
+                        <ProfileImagePreview url={imagePreview.url as string} zoom={imagePreviewZoom}/>
+                        <div className="fixed top-0 right-0 flex items-center gap-4 font-bold text-6xl text-primary">
+                            {isDeleting ? (
+                                <span className="loading loading-spinner loading-lg text-secondary"></span>
+                            ) : (
+                                <button className="hover:bg-white/25 hover:rounded-full text-secondary" onClick={handleImageDelete}><IoTrash /></button>
+                            )}
+                            <button className="hover:bg-white/25 hover:rounded-full" onClick={() => setImagePreviewZoom(prev => prev * 1.1)}><IoAdd /></button>
+                            <button className="hover:bg-white/25 hover:rounded-full" onClick={() => setImagePreviewZoom(prev => prev / 1.1)}><IoRemove /></button>
+                            <button className="hover:bg-white/25 hover:rounded-full text-6xl" onClick={handlePreviewModalClose}><IoClose /></button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between gap-12">
                 <div className="min-w-max avatar cursor-pointer rounded-full overflow-hidden outline outline-4 outline-offset-8 outline-primary">
                     <div className="w-12 md:w-24 lg:w-36 xl:w-48 rounded-full">
@@ -212,7 +257,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                 </div>
             )}
             <div className="mt-4">
-                <ProfileImageCarousel profileImages={profile.profileImages} />
+                <ProfileImageCarousel profileImages={profile.profileImages} handleImageClick={handlePreviewModalOpen}/>
             </div>
             {toast.show && (
                 <div className="toast toast-end">

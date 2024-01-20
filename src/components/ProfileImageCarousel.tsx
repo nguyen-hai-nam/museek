@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-const ProfileImageCarousel= (props: { profileImages: any }) => {
+const ProfileImageCarousel = (props: { profileImages: any, handleImageClick: any }) => {
     if (!props.profileImages) {
         return (
             <div className="w-full text-center gap-4">
@@ -13,8 +13,8 @@ const ProfileImageCarousel= (props: { profileImages: any }) => {
     return (
         <div className="w-full grid grid-cols-3 overflow-x-auto gap-4">
             {props.profileImages.map((profileImage: any, index: number) => (
-                <div key={index} className="w-full aspect-square flex justify-center items-center overflow-hidden bg-black">
-                    <Image src={profileImage.url} alt="Profile Image" width={400} height={400} className="transition-opacity hover:opacity-75"/>
+                <div key={index} data-tip="hello" className="tooltip tooltip-open tooltip-secondary w-full aspect-square flex justify-center items-center overflow-hidden bg-black" onClick={() => props.handleImageClick(profileImage)}>
+                    <Image src={profileImage.url} alt="Profile Image" width={400} height={400}  className="transition-opacity hover:opacity-75"/>
                 </div>
             ))}      
         </div>
