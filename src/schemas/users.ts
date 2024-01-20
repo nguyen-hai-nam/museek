@@ -12,6 +12,7 @@ export type User = {
     location?: string
     bio?: string
     roles?: any[]
+    profileImages?: any[]
 }
 
 export const userSchema = z.object({

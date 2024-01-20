@@ -3,8 +3,13 @@ import { getUser, updateUser, deleteUser } from "@/services/users"
 import { handleError } from "@/utils/api/errorHandler"
 
 export const GET = async (req: Request, { params }: { params: { id: string} }) => {
+    const url = new URL(req.url)
+    const queries = new URLSearchParams(url.search)
+    const queryString = queries.get('query')
+    const queryObject = queryString ? JSON.parse(queryString) : {}
+    queryObject.where = { id: params.id }
     try {
-        const user = await getUser(params.id)
+        const user = await getUser(queryObject)
         return Response.json({ user })
     } catch (error) {
         return handleError(error)

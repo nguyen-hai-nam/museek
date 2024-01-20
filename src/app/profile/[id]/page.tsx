@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { ChangeEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import axios from "axios"
+import { LuUpload } from "react-icons/lu"
 
 import { useStore } from "@/lib/zustand"
 import { User } from "@/schemas/users"
+import ProfileImageCarousel from "@/components/ProfileImageCarousel"
 
 export default function Profile({ params }: { params: { id: string } }) {
     const router = useRouter()
@@ -23,6 +25,8 @@ export default function Profile({ params }: { params: { id: string } }) {
     const { user } = useStore()
     const [profile, setProfile] = useState<User | null>(null)
     const [invitationMessage, setInvitationMessage] = useState("")
+    const [uploadedImage, setUploadedImage] = useState<File | null>(null)
+    const [imageDescription, setImageDescription] = useState("")
 
     useEffect(() => {
         if (user?.id === params.id) {
@@ -31,7 +35,7 @@ export default function Profile({ params }: { params: { id: string } }) {
         }
         const fetchUserProfile = async () => {
             try {
-                const res = await axios.get(`/api/users/${params.id}`)
+                const res = await axios.get(`/api/users/${params.id}?query={"include":{"profileImages":true}}`)
                 setProfile(res.data.user)
             } catch (error) {
                 router.push('/')
@@ -74,6 +78,62 @@ export default function Profile({ params }: { params: { id: string } }) {
         }
     }
 
+    const uploadProfileImage = async () => {
+        try {
+            const formData = new FormData()
+            formData.append("file", uploadedImage as File)
+            const data = {
+                userId: user.id,
+                description: imageDescription
+            }
+            formData.append("data", JSON.stringify(data))
+            const res = await axios.post("/api/profileImages", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            })
+            if (res.data.success) {
+                setProfile((oldProfile) => { 
+                    if (!oldProfile) return null
+                    return { ...oldProfile, profileImages: [...(oldProfile.profileImages || []), res.data.data]}
+                })
+                setToast({
+                    show: true,
+                    message: 'Image uploaded',
+                    type: 'success'
+                })
+            }
+        } catch (error: any) {
+            setToast({
+                show: true,
+                message: error.response.data.message || 'Something went wrong',
+                type: 'error'
+            })
+        } finally {
+            setUploadedImage(null)
+            setImageDescription("")
+            setTimeout(() => {
+                setToast(p => ({ ...p, show: false }))
+            }, 3000)
+        }
+    }
+
+    const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const file = e.target.files[0]
+            if (file) {
+                setUploadedImage(file)
+            } else {
+                setUploadedImage(null)
+            }
+        }
+    }
+
+    const handleUploadModalClose = () => {
+        setUploadedImage(null)
+        setImageDescription("")
+    }
+
     return (
         <main className="mx-auto pt-8 w-3/5">
             <dialog id="collab_modal" className="modal">
@@ -85,6 +145,19 @@ export default function Profile({ params }: { params: { id: string } }) {
                         <form method="dialog">
                             <button className="mx-2 btn">Close</button>
                             <button className="btn btn-primary" onClick={sendCollaboration}>Send</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
+            <dialog id="upload_modal" className="modal">
+                <div className="modal-box">
+                    <h2 className="p-2 font-semibold">Upload your images</h2>
+                    <input type="file" onChange={handleImageUpload} className="my-4 file-input file-input-bordered file-input-primary w-full" />
+                    <textarea value={imageDescription} onChange={(e) => setImageDescription(e.target.value)} className="my-4 textarea textarea-secondary w-full" placeholder="Description about the image ..."></textarea>
+                    <div className="modal-action">
+                        <form method="dialog">
+                            <button className="mx-2 btn" onClick={handleUploadModalClose}>Close</button>
+                            <button className="btn btn-primary" onClick={uploadProfileImage}>Upload</button>
                         </form>
                     </div>
                 </div>
@@ -131,6 +204,16 @@ export default function Profile({ params }: { params: { id: string } }) {
                 <p className="text-center">{profile.bio}</p>
             </div>
             <div className="mx-auto h-0 w-3/5 divider"></div>
+            {user?.id === params.id && (
+                <div className="mx-auto w-fit">
+                    <button className="btn w-32 btn-primary" onClick={() => (document.getElementById('upload_modal') as HTMLDialogElement)?.showModal()}>
+                        <LuUpload className="text-xl"/>
+                    </button>
+                </div>
+            )}
+            <div className="mt-4">
+                <ProfileImageCarousel profileImages={profile.profileImages} />
+            </div>
             {toast.show && (
                 <div className="toast toast-end">
                     <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'}`}>

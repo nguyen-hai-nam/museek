@@ -22,7 +22,6 @@ const Status = () => {
             if (data.count) setCollaborationCount(data.count)
         }
         const countNewArtists = async () => {
-            const today = new Date()
             const { data } = await axios.get("/api/users/count?new=true")
             if (data.count) setNewArtistCount(data.count)
         }

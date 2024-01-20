@@ -12,19 +12,8 @@ export const getAllUsers = async () => {
     return users
 }
 
-export const getUser = async (id: string) => {
-    const user = await prisma.user.findUnique({
-        where: {
-            id
-        },
-        include: {
-            roles: {
-                include: {
-                    role: true
-                }
-            }
-        }
-    })
+export const getUser = async (query: Prisma.UserFindUniqueArgs) => {
+    const user = await prisma.user.findUnique(query)
     return user
 }
 
