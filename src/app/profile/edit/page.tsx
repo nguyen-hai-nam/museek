@@ -46,12 +46,18 @@ export default function Profile() {
     }
 
     const handleAvatarUpdateSuccess = async (url: string) => {
-        if (profile) {
-            if (profile.avatarUrl) {
-                await axios.delete('/api/uploadthing', { data: { fileUrl: profile.avatarUrl } })
-            }
-            setProfile({ ...profile, avatarUrl: url })
+        if (!user || !profile) {
+            return
         }
+        const promises = []
+        if (profile.avatarUrl) {
+            promises.push(axios.delete('/api/uploadthing', { data: { fileUrl: profile.avatarUrl } }))
+        }
+        promises.push(axios.put(`/api/users/${user.id}`, { avatarUrl: url }))
+
+        await Promise.all(promises)
+        setUser({ ...user, avatarUrl: url })
+        setProfile({ ...profile, avatarUrl: url })
     }
 
     const handleAvatarUploadError = (error: Error) => {
