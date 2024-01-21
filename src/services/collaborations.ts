@@ -1,19 +1,13 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 
 export const countCollaborations = async () => {
     const count = await prisma.collaboration.count()
     return count
 }
 
-export const getAllCollaborations = async (where: any, include: {
-    user1?: boolean
-    user2?: boolean
-    chats?: boolean
-} | null = null) => {
-    const collaborations = await prisma.collaboration.findMany({
-        where,
-        include
-    })
+export const getAllCollaborations = async (query: Prisma.CollaborationFindManyArgs) => {
+    const collaborations = await prisma.collaboration.findMany(query)
     return collaborations
 }
 

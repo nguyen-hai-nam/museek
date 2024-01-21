@@ -32,8 +32,8 @@ export default function Profile({ params }: { params: { id: string } }) {
     const [imagePreview, setImagePreview] = useState<any | null>(null)
     const [imagePreviewZoom, setImagePreviewZoom] = useState(0.9)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isCollaborationSent, setIsCollaborationSent] = useState(false)
     
-
     useEffect(() => {
         if (user?.id === params.id) {
             setProfile(user)
@@ -47,9 +47,19 @@ export default function Profile({ params }: { params: { id: string } }) {
                 router.push('/')
             }
         }
+        const fetchCollaboration = async () => {
+            try {
+                const res = await axios.get(`/api/collaborations?query={"where":{"userId1":"${user?.id}","userId2":"${params.id}"}}`)
+                if (res.data.collaborations.length > 0) {
+                    setIsCollaborationSent(true)
+                }
+            } catch (error) {
+                setIsCollaborationSent(false)
+            }
+        }
         fetchUserProfile()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params.id])
+        fetchCollaboration()
+    }, [params.id, router, user])
 
     if (!user || !profile) {
         return (
@@ -71,6 +81,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                 message: 'Invitation sent',
                 type: 'success'
             })
+            setIsCollaborationSent(true)
         } catch (error: any) {
             setToast({
                 show: true,
@@ -222,12 +233,16 @@ export default function Profile({ params }: { params: { id: string } }) {
                 <div className="w-3/4 max-w-full">
                     <div className="flex items-center justify-between">
                         <span className="text-xl font-semibold">{profile.name}</span>
-                        {user?.id === params.id ? (
+                        {user?.id === params.id && (
                             <Link href="/profile/edit">
                                 <button className="btn btn-sm">Edit profile</button>
                             </Link>
-                        ) : (
-                            <button className="btn btn-sm btn-primary" onClick={()=>(document.getElementById('collab_modal') as HTMLDialogElement)?.showModal()}>Collab</button>
+                        )}
+                        {user?.id !== params.id && isCollaborationSent && (
+                            <button className="btn btn-sm btn-primary btn-disabled">Request sent</button>
+                        )}
+                        {user?.id !== params.id && !isCollaborationSent && (
+                            <button className="btn btn-sm btn-primary" onClick={()=>(document.getElementById('collab_modal') as HTMLDialogElement)?.showModal()}>Request collaboration</button>
                         )}
                     </div>
                     <div className="mt-4 xl:w-4/5 grid grid-cols-2">
