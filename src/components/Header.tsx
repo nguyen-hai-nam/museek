@@ -11,7 +11,7 @@ import { useStore } from '@/lib/zustand'
 const headerItems = [
     {
         name: 'Seek',
-        href: '/'
+        href: '/seek'
     },
     {
         name: 'Collaboration',
