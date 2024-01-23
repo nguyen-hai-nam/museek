@@ -1,240 +1,106 @@
-"use client"
+import { redirect } from 'next/navigation'
+import { currentUser } from '@clerk/nextjs'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
-import axios from 'axios'
+import { prisma } from '@/lib/prisma'
+import { utapi } from '@/lib/utapi'
 
-import { useStore } from '@/lib/zustand'
-import { User } from '@/schemas/users'
-import { AvatarUpload } from '@/components/AvatarUpload'
+const ProfileEditor = async () => {
+    const userClerk = await currentUser()
+    if (!userClerk) {
+        redirect('/firstLogin')
+    }
 
-export default function Profile() {
-    const router = useRouter()
-    const { user: userClerk } = useUser()
-
-    const [toast, setToast] = useState<{
-        show: boolean,
-        message: string,
-        type: 'error' | 'success'
-    }>({
-        show: false,
-        message: '',
-        type: 'success'
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userClerk.id
+        }
     })
-    const [roleOptions, setRoleOptions] = useState<{id: string; name: string}[]>([])
-    const { user, setUser } = useStore()
-    const [profile, setProfile] = useState<User | null>(null)
-
-    useEffect(() => {
-        const fetchRoles = async () => {
-            const res = await axios.get('/api/roles')
-            setRoleOptions(res.data.roles)
-        }
-        fetchRoles()
-    }, [])
-
-    useEffect(() => {
-        setProfile(user)
-    }, [user])
-
-    const handleChange = (e: any) => {
-        const { name, value } = e.target
-        if (profile) {
-            setProfile({ ...profile, [name]: value })
-        }
+    if (!user) {
+        redirect('/firstLogin')
     }
 
-    const handleAvatarUpdateSuccess = async (url: string) => {
-        if (!user || !profile) {
-            return
-        }
-        const promises = []
-        if (profile.avatarUrl) {
-            promises.push(axios.delete('/api/uploadthing', { data: { fileUrl: profile.avatarUrl } }))
-        }
-        promises.push(axios.put(`/api/users/${user.id}`, { avatarUrl: url }))
-
-        await Promise.all(promises)
-        setUser({ ...user, avatarUrl: url })
-        setProfile({ ...profile, avatarUrl: url })
-    }
-
-    const handleAvatarUploadError = (error: Error) => {
-        setToast({
-            show: true,
-            message: error.message,
-            type: 'error'
-        })
-        setTimeout(() => {
-            setToast(p => ({ ...p, show: false }))
-        }, 3000)
-    }
-
-    const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedRole = roleOptions.find(role => role.id === event.target.value)
-        if (!selectedRole || !profile) {
-            return
-        }
-        const roleExists = profile.roles?.some(role => role.roleId === selectedRole.id)
-        if (roleExists) {
-            setToast({
-                show: true,
-                message: 'Role already exists',
-                type: 'error'
-            })
-            setTimeout(() => {
-                setToast(p => ({ ...p, show: false }))
-            }, 3000)
-            return
-        }
-        event.target.value = ''
-        setProfile(p => {
-            if (p && p.roles) {
-                return { ...p, roles: [...p.roles, { roleId: selectedRole.id }] }
-            }
-            return p 
-        })
-    }
-
-    const onSubmit = async (e: any) => {
-        e.preventDefault()
-        if (!user) {
-            return
-        }
-        const processedProfile = preprocessProfile(profile)
+    const updateUser = async (formData: FormData) => {
+        "use server"
+        const avatar = formData.has('avatar') ? formData.get('avatar') : null
+        let avatarUrl: string | undefined = undefined
+        let key: string | undefined = undefined
         try {
-            await submitAvatar()
-            await axios.put(`/api/users/${user.id}`, {...processedProfile})
-            setToast({
-                show: true,
-                message: 'Profile edited',
-                type: 'success'
+            const res = await utapi.uploadFiles(avatar as File)
+            if (res.error) {
+                redirect(`/profile/${userClerk.id}`)
+            }
+            key = res.data.key
+            avatarUrl = res.data.url
+        } catch (error) {}
+
+        try {
+            const data = {
+                avatarUrl,
+                name: formData.get('name') as string,
+                gender: formData.get('genre') as string,
+                location: formData.get('location') as string,
+                birthDate: formData.get('birthDate') as string + 'T00:00:00.000Z',
+                bio: formData.get('bio') as string,
+            }
+            await prisma.user.update({
+                where: {
+                    id: userClerk.id
+                },
+                data
             })
-            setUser(profile)
-            router.push(`/profile/${user.id}`)
-        } catch (err) {
-            setToast({
-                show: true,
-                message: 'Something went wrong',
-                type: 'error'
-            })
-            setTimeout(() => {
-                setToast(p => ({ ...p, show: false }))
-            }, 3000)
+        } catch (error) {
+            if (key) {
+                await utapi.deleteFiles(key)
+            }
+        } finally {
+            redirect(`/profile/${userClerk.id}`)
         }
-    }
-
-    const submitAvatar = async () => {
-        if (!user || !profile) {
-            return
-        }
-        await axios.put(`/api/users/${user.id}`, { avatarUrl: profile.avatarUrl })
-    }
-
-    const preprocessProfile = (profile: any) => {
-        const nullFilter = (obj: { [key: string]: any }) => {
-            return Object.fromEntries(
-                Object.entries(obj).filter(([, value]) => value)
-            )
-        }
-
-        const keyFilter = (obj: { [key: string]: any }, keys: string[]) => {
-            return keys.reduce((result: { [key: string]: any }, key) => {
-                if (obj.hasOwnProperty(key)) {
-                    result[key] = obj[key]
-                }
-                return result
-            }, {})
-        }
-
-        const keysToPick = ['name', 'gender', 'birthDate', 'location', 'bio']
-
-        const processedProfile = keyFilter(nullFilter(profile), keysToPick)
-
-        processedProfile.birthDate = new Date(processedProfile.birthDate as string).toISOString()
-
-        processedProfile.roles = profile.roles.map((role: any) => ({id: role.roleId}))
-
-        return processedProfile
-    }
-
-    if (!profile) {
-        return (
-            <main className="mx-auto w-3/5 flex justify-center items-center">
-                <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
-            </main>
-        )
     }
 
     return (
-        <main className="mx-auto pt-8 w-1/2">
-            <form className='w-full' onSubmit={onSubmit}>
-                <h1 className='my-6 text-lg font-semibold'>Personal Information</h1>
-                <section className='grid grid-cols-[minmax(max-content,120px)_1fr] gap-4 items-center'>
-                    <h3 className='font-semibold'>Avatar</h3>
-                    <AvatarUpload currentAvatarUrl={profile.avatarUrl} onChange={handleAvatarUpdateSuccess} onError={handleAvatarUploadError}/>
-                    <h3 className='font-semibold'>Name</h3>
-                    <input type="text" name='name' value={profile.name || ""} onChange={handleChange} placeholder="Name" className="text-sm input input-bordered input-primary w-full"/>
-                    <h3 className='font-semibold'>Gender</h3>
-                    <select name='gender' value={profile.gender || ""} onChange={handleChange} className="select select-primary w-full">
+        <main className="mx-auto mt-12 w-1/3">
+            <h1 className="text-center text-3xl font-bold">Edit your profile</h1>
+            <form action={updateUser} className="w-full">
+                <section className="mt-8 my-4 w-full grid grid-cols-[max-content_1fr] text-sm items-center gap-6 text-secondary-content">
+                    <label htmlFor='avatar'>Avatar</label>
+                    <input id="avatar" type="file" name='avatar' className="file-input file-input-bordered file-input-secondary file-input-sm w-full" />
+                    <label htmlFor='name'>Name</label>
+                    <input id="name" type="text" name='name' defaultValue={user.name} className="input input-bordered input-secondary input-sm w-full"/>
+                    <label htmlFor='gender'>Gender</label>
+                    <select id="gender" name='gender' className="select select-secondary select-sm w-full">
                         <option value="" disabled>Select your gender</option>
                         <option value='male'>Male</option>
                         <option value='female'>Female</option>
                         <option value='other'>Other</option>
                     </select>
-                    <h3 className='font-semibold'>Birthday</h3>
-                    <input type="date" name='birthDate' value={profile.birthDate?.split('T')[0] || ""} onChange={handleChange} placeholder="Birthday" className="text-sm input input-bordered input-primary w-full" />
-                    <h3 className='font-semibold'>Location</h3>
-                    <select name="location" value={profile.location || ""} onChange={handleChange} className="select select-primary w-full">
+                    <label htmlFor='birthDate'>Birthday</label>
+                    <input id="birthDate" type="date" name='birthDate' defaultValue={user.birthDate ? user.birthDate.toISOString().slice(0, 10) : undefined} className="input input-bordered input-secondary input-sm w-full" />
+                    <label htmlFor='location'>Location</label>
+                    <select id="location" name="location" defaultValue={user.location || ""} className="select select-secondary select-sm w-full">
                         <option value="" disabled>Select your location</option>
-                        <option value='hanoi'>Ha Noi</option>
-                        <option value='saigon'>Sai Gon</option>
+                        <option value='Ha Noi'>Ha Noi</option>
+                        <option value='Sai Gon'>Sai Gon</option>
                     </select>
-                    <h3 className='font-semibold'>Bio</h3>
-                    <textarea name='bio' value={profile.bio || ""} onChange={handleChange} className="textarea textarea-primary w-full" placeholder="Bio"></textarea>
-                    <h3 className='font-semibold'>Roles</h3>
-                    <select onChange={handleRoleChange} className="select select-primary w-full">
-                        <option value="" disabled >Add roles</option>
-                        {roleOptions.map((role: any) => (
-                            <option key={role.id} value={role.id}>{role.name}</option>
-                        ))}
-                    </select>
-                    <div></div>
-                    <div className='flex justify-start items-center flex-wrap gap-1'>
-                        {profile?.roles?.map((role: any) => {
-                            const roleOption = roleOptions.find((option: any) => option.id === role.roleId)
-                            if (!roleOption) {
-                                return null
-                            }
-                            return (
-                                <span key={role.roleId} className='badge badge-outline font-semibold border-2'>{roleOption.name}</span>
-                            )
-                        })}
-                    </div>
+                    <label htmlFor='bio'>Bio</label>
+                    <textarea id='bio' name='bio' defaultValue={user.bio || undefined} rows={5} className="textarea textarea-secondary w-full" placeholder="Bio"></textarea>
                 </section>
-                <div className="my-16 mx-auto h-0 w-full divider"></div>
+                <div className="my-8 mx-auto h-0 w-full divider"></div>
                 <h1 className='my-6 text-lg font-semibold'>Warning Zone</h1>
-                <section className='grid grid-cols-[minmax(max-content,120px)_1fr] gap-4 items-center'>
-                    <h3 className='font-semibold'>Email</h3>
-                    <input type="text" name="email" value={profile.email || ""} onChange={handleChange} placeholder="Email" disabled className="text-sm input input-bordered input-warning w-full" />
-                    <h3 className='font-semibold'>Phone</h3>
-                    <input type="text" name='phoneNumber' value={profile.phoneNumber || ""} onChange={handleChange} placeholder="Phone number" disabled className="text-sm input input-bordered input-warning w-full" />
-                    {userClerk?.passwordEnabled && <input type="text" placeholder="Password" className="text-sm input input-bordered input-warning w-full" />}
-                    {userClerk?.passwordEnabled && <input type="text" placeholder="Confirm password" className="text-sm input input-bordered input-warning w-full" />}
+                <section className='grid grid-cols-[max-content_1fr] gap-x-8 gap-y-6 items-center'>
+                    <label htmlFor='email'>Email</label>
+                    <input id='email' type="text" name="email" defaultValue={user.email} disabled className="input input-bordered input-warning input-sm w-full" />
+                    <label htmlFor='phoneNumber'>Phone</label>
+                    <input id='phoneNumber' type="text" name='phoneNumber' defaultValue={user.phoneNumber || undefined} disabled className="input input-bordered input-warning input-sm w-full" />
+                    {userClerk?.passwordEnabled && <input type="text" placeholder="Password" className="input input-bordered input-warning input-sm w-full" />}
+                    {userClerk?.passwordEnabled && <input type="text" placeholder="Confirm password" className="input input-bordered input-warning input-sm w-full" />}
                 </section>
                 <div className="my-16 mx-auto h-0 w-full divider"></div>
                 <section className='my-16 flex justify-center'>
-                    <button type="submit" className="px-8 btn btn-primary" disabled={!profile}>Submit</button>
+                    <button type="submit" className="px-8 btn btn-primary">Submit</button>
                 </section>
             </form>
-            {toast.show && (
-                <div className="toast toast-end">
-                    <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'}`}>
-                        <span>{toast.message}</span>
-                    </div>
-                </div>
-            )}
         </main>
     )
 }
+
+export default ProfileEditor
