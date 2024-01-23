@@ -1,88 +1,66 @@
-"use client"
+import { auth } from "@clerk/nextjs"
+import { revalidatePath } from "next/cache"
 
-import { useUser } from "@clerk/nextjs"
-import axios from "axios"
-import { useEffect, useState } from "react"
+import ChatBox from "@/components/chat/ChatBox"
+import CurrentCollaborationList from "@/components/chat/CurrentCollaborationList"
+import IncomingCollaborationList from "@/components/chat/IncomingCollaborationList"
 
-import { Collaboration, getCollaborationsResponseSchema } from "@/schemas/collaborations"
-import ChatCard from "@/components/ChatCard"
-import ChatBox from "@/components/ChatBox"
+let tab: 'Current' | 'Incoming' = 'Current'
+let selectedCollaborationId: string | null = null
 
-export default function Chat() {
-    const { user } = useUser()
-    const [myCollaborations, setMyCollaborations] = useState<Collaboration[]>([])
-    const [currentCollaboration, setCurrentCollaboration] = useState<Collaboration | null>(null)
-    const [chatSearchString, setChatSearchString] = useState<string>("")
+const Chat = async () => {
+    const { userId } = await auth()
 
-    useEffect(() => {
-        if (!user) {
-            return
-        }
-        const fetchCollaborations = async () => {
-            try {
-                const res = await axios.get(`api/collaborations?where={"userId2":"${user.id}"}&include={"user1":true,"chats":true}`)
-                const validatedCollaborations = getCollaborationsResponseSchema.parse(res.data.collaborations)
-                setMyCollaborations(validatedCollaborations)
-            } catch (error) {
-                setMyCollaborations([])
-            }
-        }
-        fetchCollaborations()
-    }, [user])
-
-    const handleChatCardClick = (id: string) => {
-        const res = myCollaborations.find(collaboration => collaboration.id === id)
-        if (res) {
-            setCurrentCollaboration(res)
-        }
+    const handleTabChange = async (formData: FormData) => {
+        "use server"
+        const newTab = formData.get('tab') as 'Current' | 'Incoming'
+        tab = newTab
+        revalidatePath('/chat')
     }
 
-    if (!user) {
-        return (
-            <main className="mx-auto w-3/5 flex justify-center items-center">
-                <span className="my-64 loading loading-infinity loading-lg scale-[2]"></span>
-            </main>
-        )
+    const setSelectedCollaboration = async (collaborationId: string | null) => {
+        "use server"
+        selectedCollaborationId = collaborationId
+        revalidatePath('/chat')
     }
 
     return (
-        <main className="pl-2 h-full w-full grid grid-cols-[20%_80%] justify-start items-start overflow-hidden">
-            <div className='h-full border-r-2'>
+        <main className="h-full w-full grid grid-cols-[minmax(min-content,20%)_1fr] justify-start items-start overflow-hidden">
+            <div className='px-2 h-full border-r-2'>
                 <h1 className='mt-4 text-2xl font-bold'>Chat</h1>
-                <div className='mt-2 mb-4 mr-2 '>
-                    <input
-                        value={chatSearchString}
-                        onChange={(e) => setChatSearchString(e.target.value)} 
-                        type="text"
-                        placeholder="Find chat ..."
-                        className="input input-sm input-bordered w-full focus:outline-2 focus:outline-offset-0"
-                    />
+                <div role="tablist" className="mt-4 tabs tabs-lifted">
+                    <a role="tab" className={`tab font-bold ${tab === 'Current' ? 'tab-active text-secondary' : ''}`}>
+                        <form action={handleTabChange}>
+                            <input type="text" name="tab" value="Current" readOnly hidden/>
+                            <button type="submit" disabled={tab === "Current"}>Current</button>
+                        </form>
+                    </a>
+                    <a role="tab" className={`tab font-bold ${tab === 'Incoming' ? 'tab-active text-secondary' : ''}`}>
+                        <form action={handleTabChange}>
+                            <input type="text" name="tab" value="Incoming" readOnly hidden />
+                            <button type="submit" disabled={tab === "Incoming"}>Incoming</button>
+                        </form>
+                    </a>
                 </div>
-                <div className="flex flex-col h-full overflow-auto overflow-x-hidden">
-                    {myCollaborations.filter(collaboration => {
-                        const name = collaboration.user1.id === user.id ? collaboration.user2.name : collaboration.user1.name
-                        return name.toLowerCase().includes(chatSearchString.toLowerCase())
-                    }).map(collaboration => (
-                        <div key={collaboration.id} onClick={() => handleChatCardClick(collaboration.id)}>
-                            <ChatCard
-                                id={collaboration.id}
-                                userId={user.id}
-                                name={collaboration.user1.id === user.id ? collaboration.user2.name : collaboration.user1.name}
-                                latestMessage={{
-                                    content: collaboration.chats[0]?.message,
-                                    fromId: collaboration.chats[0]?.senderId,
-                                    sentAt: collaboration.chats[0]?.createdAt
-                                }}
-                                focus={collaboration.id === currentCollaboration?.id}/>
-                        </div>
-                    ))}
-                </div>
+                {tab === 'Current' && (
+                    <CurrentCollaborationList userId={userId as string} handleSelect={setSelectedCollaboration} />
+                )}
+                {tab === 'Incoming' && (
+                    <IncomingCollaborationList userId={userId as string} />
+                )}
             </div>
-            <div className='h-full grow overflow-auto'>
-                {currentCollaboration && (
-                    <ChatBox collaboration={currentCollaboration} userId={user.id}/>
+            <div className='h-full'>
+                {selectedCollaborationId ? (
+                    <ChatBox userId={userId as string} collaborationId={selectedCollaborationId}/>
+                ) : (
+                    <div className='h-full flex items-center justify-center'>
+                        <h1 className='text-2xl font-semibold text-center'>Select a conversation to start chatting</h1>
+                    </div>
+                
                 )}
             </div>
         </main>
     )
 }
+
+export default Chat
