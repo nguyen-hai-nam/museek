@@ -14,10 +14,6 @@ const headerItems = [
         href: '/seek'
     },
     {
-        name: 'Collaboration',
-        href: '/collaboration'
-    },
-    {
         name: 'Chat',
         href: '/chat'
     }
