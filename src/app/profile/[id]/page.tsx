@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { currentUser } from "@clerk/nextjs"
+import { FaPenToSquare } from "react-icons/fa6"
 
 import { prisma } from "@/lib/prisma"
 import ProfileImageCarousel from "@/components/ProfileImageCarousel"
@@ -101,6 +102,7 @@ const Profile = async ({ params }: { params: { id: string } }) => {
                         )) : (
                             <div className="badge badge-lg badge-outline badge-neutral text-sm font-semibold border-2">No roles</div>
                         )}
+                        <Link href={'/profile/edit/roles'}><FaPenToSquare className="text-xl" /></Link>
                     </div>
                 </div>
             </section>              

@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma"
 import { CreateRoleSchema, UpdateRoleSchema } from "@/schemas/roles"
 
-export const getRoles = async () => {
-    const roles = await prisma.role.findMany()
+export const getRoles = async (query: any) => {
+    const roles = await prisma.role.findMany(query)
     return roles
 }
 

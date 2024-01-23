@@ -2,9 +2,13 @@ import { getRoles, createRole } from '@/services/roles'
 import { createRoleSchema } from '@/schemas/roles'
 import { handleError } from "@/utils/api/errorHandler"
 
-export const GET = async () => {
+export const GET = async (req: Request) => {
+    const url = new URL(req.url)
+    const queries = new URLSearchParams(url.search)
+    const queryString = queries.get('query')
+    const queryObject = queryString ? JSON.parse(queryString) : {}
     try {
-        const roles = await getRoles()
+        const roles = await getRoles(queryObject)
         return Response.json({ roles })
     } catch (error) {
         return handleError(error)
