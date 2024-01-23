@@ -40,8 +40,10 @@ const ProfileImageCarousel = (props: ProfileImageCarouselProps) => {
     }
 
     const closePreviewModal = () => {
-        setImagePreview(null)
-        setImagePreviewZoom(0.9)
+        setTimeout(() => {
+            setImagePreview(null)
+            setImagePreviewZoom(0.9)
+        }, 100)
     }
 
     return (
@@ -53,7 +55,7 @@ const ProfileImageCarousel = (props: ProfileImageCarouselProps) => {
                     <input type="file" name="file" className="my-2 file-input file-input-sm file-input-bordered file-input-secondary w-full" />
                     <textarea name="description" className="mt-2 textarea textarea-secondary w-full" placeholder="Description about the image ..."></textarea>
                     <div className="modal-action">
-                        <button className="btn btn-sm" onClick={closeUploadModal}>Close</button>
+                        <button type="button" className="btn btn-sm" onClick={closeUploadModal}>Close</button>
                         <button type="submit" className="btn btn-sm btn-primary" onClick={closeUploadModal}>Upload</button>
                     </div>
                 </form>
@@ -65,11 +67,11 @@ const ProfileImageCarousel = (props: ProfileImageCarouselProps) => {
                         <div className="fixed top-0 right-0 flex items-center gap-4 font-bold text-6xl text-primary">
                             <form action={deleteProfileImage}>
                                 <input type="text" name="data" value={JSON.stringify(imagePreview)} readOnly hidden />
-                                <button className="hover:bg-white/25 hover:rounded-full text-error" onClick={closePreviewModal}><IoTrash /></button>
+                                <button type="submit" className="hover:bg-white/25 hover:rounded-full text-error" onClick={closePreviewModal}><IoTrash /></button>
                             </form>
-                            <button className="hover:bg-white/25 hover:rounded-full" onClick={() => setImagePreviewZoom(prev => prev * 1.1)}><IoAdd /></button>
-                            <button className="hover:bg-white/25 hover:rounded-full" onClick={() => setImagePreviewZoom(prev => prev / 1.1)}><IoRemove /></button>
-                            <button className="hover:bg-white/25 hover:rounded-full text-6xl" onClick={closePreviewModal}><IoClose /></button>
+                            <button type="button" className="hover:bg-white/25 hover:rounded-full" onClick={() => setImagePreviewZoom(prev => prev * 1.1)}><IoAdd /></button>
+                            <button type="button" className="hover:bg-white/25 hover:rounded-full" onClick={() => setImagePreviewZoom(prev => prev / 1.1)}><IoRemove /></button>
+                            <button  type="button" className="hover:bg-white/25 hover:rounded-full text-6xl" onClick={closePreviewModal}><IoClose /></button>
                         </div>
                     </div>
                 </div>
