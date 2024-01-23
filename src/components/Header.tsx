@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useUser } from "@clerk/nextjs"
 import { useEffect } from 'react'
 import axios from 'axios'
@@ -20,6 +21,7 @@ const headerItems = [
 ]
 
 const Navbar = () => {
+    const router = useRouter()
     const { isSignedIn, user: userClerk } = useUser()
     const { user, setUser } = useStore()
     
@@ -30,13 +32,17 @@ const Navbar = () => {
         const fetchUser = async (id: string) => {
             try {
                 const res = await axios.get(`/api/users/${id}`)
-                setUser(res.data.user)
+                if (res.data.user) setUser(res.data.user)
+                else {
+                    setUser(null)
+                    router.push('/firstLogin')
+                }
             } catch (error) {
                 setUser(null)
             }
         }
         fetchUser(userClerk.id)
-    }, [setUser, userClerk])
+    }, [router, setUser, userClerk])
 
     return (
         <nav className='px-2 flex justify-between items-center'>
@@ -61,7 +67,7 @@ const Navbar = () => {
                         <label tabIndex={0}>
                             <div className="avatar cursor-pointer">
                                 <div className="w-10 rounded-full">
-                                    <Image src={user?.avatarUrl as string} width={96} height={96} alt='Profile Picture' />
+                                    <Image src={user?.avatarUrl as string || './next.svg'} width={96} height={96} alt='Profile Picture' />
                                 </div>
                             </div>
                         </label>

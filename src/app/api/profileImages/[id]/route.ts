@@ -1,5 +1,5 @@
 import { getProfileImage, deleteProfileImage } from "@/services/profileImage"
-import { utapi } from "@/app/api/uploadthing/core"
+import { utapi } from "@/lib/utapi"
 import { handleError } from "@/utils/api/errorHandler"
 
 export const DELETE = async (req: Request, { params }: { params: { id: string } }) => {

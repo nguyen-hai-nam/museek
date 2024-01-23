@@ -1,6 +1,6 @@
 import { createProfileImageSchema } from "@/schemas/profileImage"
 import { createProfileImage } from "@/services/profileImage"
-import { utapi } from "@/app/api/uploadthing/core"
+import { utapi } from "@/lib/utapi"
 import { handleError } from "@/utils/api/errorHandler"
 
 export const POST = async (req: Request) => {
