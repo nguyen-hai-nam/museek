@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useUser } from "@clerk/nextjs"
+import { useClerk, useUser } from "@clerk/nextjs"
 import { useEffect } from 'react'
 import axios from 'axios'
 
@@ -22,6 +22,7 @@ const headerItems = [
 
 const Navbar = () => {
     const router = useRouter()
+    const { signOut } = useClerk()
     const { isSignedIn, user: userClerk } = useUser()
     const { user, setUser } = useStore()
     
@@ -43,6 +44,10 @@ const Navbar = () => {
         }
         fetchUser(userClerk.id)
     }, [router, setUser, userClerk])
+
+    const handleLogout = async () => {
+        signOut(() => router.push('/'))
+    }
 
     return (
         <nav className='px-2 flex justify-between items-center'>
@@ -74,7 +79,7 @@ const Navbar = () => {
                         <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
                             <li><Link href={`/profile/${user?.id}`}>Profile</Link></li>
                             <li><Link href="/">Settings</Link></li>
-                            <li><Link href="/">Log out</Link></li>
+                            <li onClick={handleLogout}><Link href="/">Log out</Link></li>
                         </ul>
                     </div>
                 )}
