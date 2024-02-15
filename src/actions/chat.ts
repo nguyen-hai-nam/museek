@@ -17,7 +17,7 @@ export const handleSendMessage = async (formData: FormData) => {
             receiverId
         }
     })
-    pusherServer.trigger("chat", collaborationId, res)
+    pusherServer.trigger(collaborationId, "chat", res)
     revalidatePath('/chat')
 }
 

@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { pusherServer } from "@/lib/pusher"
 
-export const getAllChats = async (where: any, include: any) => {
+export const getAllChats = async (query: any) => {
     const chats = await prisma.chat.findMany({
-        where,
-        include
+        ...query
     })
     return chats
 }
